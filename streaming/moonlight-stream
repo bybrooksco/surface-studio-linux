@@ -1,0 +1,12 @@
+#!/bin/bash
+# Stream the host's desktop to the Surface Studio, full-screen at 3:2.
+# Usage: moonlight-stream [host]   (or set MOONLIGHT_HOST)
+# - QT_QPA_PLATFORM=xcb: moonlight-qt's native Wayland input is broken on Hyprland (mouse capture).
+# - --video-decoder hardware --no-hdr: decode on the Intel iGPU via VA-API; avoids a black-band glitch.
+# - 3600x2400: the host's dummy plug was given this 3:2 mode with dummy-edid
+#   (bybrooksco/dummy-edid). 3840x2560@60 is over HDMI 2.0's pixel-clock limit.
+# - 100 Mbps: fine on a direct gigabit link; drop to 60000 if long sessions run the Studio hot.
+HOST=${1:-${MOONLIGHT_HOST:?usage: moonlight-stream HOST (or set MOONLIGHT_HOST)}}
+QT_QPA_PLATFORM=xcb exec moonlight stream "$HOST" "Desktop" --resolution 3600x2400 --fps 60 \
+  --bitrate 100000 --video-decoder hardware --no-hdr \
+  --no-vsync --game-optimization --display-mode fullscreen

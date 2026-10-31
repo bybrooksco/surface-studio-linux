@@ -1,0 +1,8 @@
+# Surface Studio internal touch digitizer (Microsoft 045e:0911) boots in
+# single-touch/mouse-emulation mode; Windows sends an explicit Feature
+# report to switch it into real multitouch mode at driver init, which
+# Linux's generic hid-multitouch driver has no hook for on this specific
+# descriptor (InputMode usage 0x52 is exposed as an Input, not Feature,
+# field). This replicates that switch at boot/hotplug.
+# Sends the switch via surface-touch-multitouch (next to this file).
+ACTION=="add", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="045e", ATTRS{idProduct}=="0911", RUN+="/usr/local/bin/surface-touch-multitouch %k"

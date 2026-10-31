@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = nvidia-open-dkms
+
+[Action]
+Description = Applying Surface Studio console-offset patch to nvidia DKMS source...
+When = PostTransaction
+Exec = /usr/local/lib/studio-nvidia/apply-console-patch.sh

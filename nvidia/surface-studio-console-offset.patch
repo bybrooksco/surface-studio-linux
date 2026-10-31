@@ -1,0 +1,52 @@
+diff -ruN a/kernel-open/nvidia/nv.c b/kernel-open/nvidia/nv.c
+--- a/kernel-open/nvidia/nv.c	2026-10-12 16:18:47.086534724 -0400
++++ b/kernel-open/nvidia/nv.c	2026-10-12 16:18:47.089341870 -0400
+@@ -6423,6 +6423,26 @@
+          * system carveout, or it's a dGPU device with console mapped onto its
+          * BAR.
+          */
++        NvU64 fbBar = nv->bars[NV_GPU_BAR_INDEX_FB].cpu_address;
++        NvU64 consolePad = 0;
++
++        /*
++         * Surface Studio 2+: the UEFI GOP console sits at BAR1+0x10000, not at
++         * BAR1+0. Report it as starting at BAR1+0 (size padded) so RM reserves
++         * the VRAM under it and preserves its BAR1 mapping.
++         * shortcut: width/height/pitch still describe the real surface at +pad,
++         * so nvidia-modeset console restore would draw 64 KB off; fix that
++         * before using nvidia_drm on this panel.
++         */
++        if (!NV_HAS_CONSOLE_IN_SYSMEM_CARVEOUT(nv) &&
++            (physAddr > fbBar) &&
++            (physAddr + (NvU64)sysfb_info->lfb_height * sysfb_info->lfb_linelength <=
++             fbBar + nv->bars[NV_GPU_BAR_INDEX_FB].size))
++        {
++            consolePad = physAddr - fbBar;
++            physAddr = fbBar;
++        }
++
+         if (NV_HAS_CONSOLE_IN_SYSMEM_CARVEOUT(nv) ||
+             NV_IS_CONSOLE_MAPPED(nv, physAddr))
+         {
+@@ -6431,7 +6451,7 @@
+             *pFbHeight = sysfb_info->lfb_height;
+             *pFbDepth = sysfb_info->lfb_depth;
+             *pFbPitch = sysfb_info->lfb_linelength;
+-            *pFbSize = (NvU64)(*pFbHeight) * (NvU64)(*pFbPitch);
++            *pFbSize = (NvU64)(*pFbHeight) * (NvU64)(*pFbPitch) + consolePad;
+             return;
+         }
+     }
+diff -ruN a/src/nvidia/arch/nvalloc/unix/src/osinit.c b/src/nvidia/arch/nvalloc/unix/src/osinit.c
+--- a/src/nvidia/arch/nvalloc/unix/src/osinit.c	2026-10-12 16:18:47.088389631 -0400
++++ b/src/nvidia/arch/nvalloc/unix/src/osinit.c	2026-10-12 16:18:47.090061988 -0400
+@@ -1132,6 +1132,9 @@
+                           (fbBaseAddress == nv->fb->cpu_address);
+     }
+ 
++    // Surface Studio: one line per GPU init so it is visible whether the boot console is protected.
++    NV_PRINTF(LEVEL_ERROR, "studio-nvidia: boot console base 0x%llx size 0x%llx preserveBar1=%d\n",
++              fbBaseAddress, fbConsoleSize, pKernelBus ? pKernelBus->bPreserveBar1ConsoleEnabled : -1);
+     //
+     // Case for legacy console, where OS will not give console size
+     // and primary_vga will be set for the device.

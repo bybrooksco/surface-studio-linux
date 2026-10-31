@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Switch the Surface Studio touch digitizer (045e:0911) into multitouch mode.
+
+It boots in single-touch/mouse-emulation mode. Windows sends HID Feature Report 10 = 0x02
+(the Windows 8 digitizer "Device Mode" convention: 2 = multitouch) at driver init; the
+descriptor exposes InputMode (usage 0x52) only as an Input field, so Linux's hid-multitouch
+never sends it. Usage: surface-touch-multitouch hidrawN   (run by the udev rule)
+"""
+import fcntl
+import os
+import sys
+
+REPORT = bytes([0x0A, 0x02])  # report ID 10, mode 2 = multitouch
+HIDIOCSFEATURE = (3 << 30) | (len(REPORT) << 16) | (ord('H') << 8) | 0x06  # _IOWR('H', 0x06, len)
+
+dev = '/dev/' + os.path.basename(sys.argv[1])
+fd = os.open(dev, os.O_RDWR)
+try:
+    fcntl.ioctl(fd, HIDIOCSFEATURE, REPORT)
+finally:
+    os.close(fd)
+print(f'surface-touch-multitouch: sent multitouch mode switch to {dev}')

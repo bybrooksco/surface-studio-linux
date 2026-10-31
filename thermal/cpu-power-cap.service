@@ -1,0 +1,21 @@
+[Unit]
+Description=Cap sustained CPU package power (PL1) to reduce thermal throttling
+# Surface Studio 2+ (i7-11370H): the internal fan is a binary ACPI PNP0C0B
+# device (on/off only, no variable speed) and is already at its max state
+# under load, so it cannot be sped up further. Stock PL1 (45W sustained) was
+# driving the package to its 100C throttle limit repeatedly (measured:
+# package_throttle_count climbing continuously). Capping sustained power
+# lets the fixed, modest airflow actually keep up, at the cost of some
+# sustained multi-core performance. PL2/short-term boost is left alone, so
+# brief bursts still get full turbo. Tuned by hand 2026-09-16: 28W held
+# temps in the high-70s/low-80s C with zero new throttle events over a
+# ~70s test under real desktop load, versus continuous throttling at stock 45W.
+After=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'echo 28000000 > /sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw'
+
+[Install]
+WantedBy=multi-user.target
