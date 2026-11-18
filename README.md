@@ -142,6 +142,10 @@ install -Dm755 streaming/moonlight-stream ~/.local/bin/moonlight-stream
 moonlight-stream 192.168.1.50   # your Sunshine host
 ```
 
+## Credits
+
+Built by Brooks with [Claude](https://claude.com/claude-code) (Anthropic) as a coding partner; most commits are co-authored by Claude.
+
 ## License
 
 MIT, see `LICENSE`.
