@@ -141,3 +141,7 @@ The Studio makes a good thin client for a Sunshine gaming PC through
 install -Dm755 streaming/moonlight-stream ~/.local/bin/moonlight-stream
 moonlight-stream 192.168.1.50   # your Sunshine host
 ```
+
+## License
+
+MIT, see `LICENSE`.
